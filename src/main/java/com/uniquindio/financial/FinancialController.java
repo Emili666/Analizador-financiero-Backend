@@ -57,6 +57,7 @@ public class FinancialController {
             assetInfo.put("symbol", symbol);
             assetInfo.put("risk", algorithmService.classifyRisk(volatility));
             assetInfo.put("volatility", volatility);
+            assetInfo.put("history", records); // Include history for charts
             result.add(assetInfo);
         }
         // Requirement 3: Sorted by risk (volatility descending)
@@ -78,7 +79,7 @@ public class FinancialController {
     }
 
     @GetMapping("/patterns/{symbol}")
-    public Map<String, Integer> getPatterns(@RequestParam String symbol) {
+    public Map<String, Integer> getPatterns(@PathVariable String symbol) {
         List<FinancialRecord> records = portfolioData.get(symbol);
         double[] prices = getClosePrices(records);
 
@@ -86,6 +87,24 @@ public class FinancialController {
         patterns.put("consecutiveUp", algorithmService.countConsecutiveUp(prices, 3));
         patterns.put("bullishEngulfing", algorithmService.countBullishEngulfing(records));
         return patterns;
+    }
+
+    @GetMapping("/correlation-matrix")
+    public Map<String, Object> getCorrelationMatrix() {
+        List<String> assetNames = new ArrayList<>(portfolioData.keySet());
+        double[][] allReturns = new double[assetNames.size()][];
+
+        for (int i = 0; i < assetNames.size(); i++) {
+            List<FinancialRecord> records = portfolioData.get(assetNames.get(i));
+            allReturns[i] = calculateReturns(records);
+        }
+
+        double[][] matrix = algorithmService.calculateCorrelationMatrix(allReturns);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("assets", assetNames);
+        result.put("matrix", matrix);
+        return result;
     }
 
     @GetMapping("/chart/{symbol}")
@@ -135,6 +154,20 @@ public class FinancialController {
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=financial_report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfContent);
+    }
+
+    @GetMapping("/report/comparative/pdf")
+    public ResponseEntity<byte[]> exportComparativePdf(@RequestParam String sym1, @RequestParam String sym2) {
+        Map<String, Double> similarities = getSimilarity(sym1, sym2);
+        List<FinancialRecord> hist1 = portfolioData.get(sym1);
+        List<FinancialRecord> hist2 = portfolioData.get(sym2);
+        byte[] pdfContent = reportService.generateComparativeReport(sym1, sym2, similarities, hist1, hist2);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition",
+                        "attachment; filename=comparative_report_" + sym1 + "_vs_" + sym2 + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfContent);
     }

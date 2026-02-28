@@ -187,4 +187,26 @@ public class AlgorithmService {
         }
         return sma;
     }
+
+    /**
+     * Requirement: Calculate Correlation Matrix.
+     * Complexity Analysis: O(k * n^2) where k is the length of the series and n is
+     * the number of assets.
+     */
+    public double[][] calculateCorrelationMatrix(double[][] allSeries) {
+        int n = allSeries.length;
+        double[][] matrix = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = i; j < n; j++) {
+                if (i == j) {
+                    matrix[i][j] = 1.0;
+                } else {
+                    double corr = pearsonCorrelation(allSeries[i], allSeries[j]);
+                    matrix[i][j] = corr;
+                    matrix[j][i] = corr;
+                }
+            }
+        }
+        return matrix;
+    }
 }
