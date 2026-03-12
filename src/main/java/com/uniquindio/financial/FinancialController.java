@@ -16,9 +16,9 @@ public class FinancialController {
     private final ReportService reportService;
     private final Map<String, List<FinancialRecord>> portfolioData = new HashMap<>();
     private final List<String> symbols = Arrays.asList(
-            "ECOPETROL.CB", "ISA.CB", "GEB.CB", "PFBCOLOM.CB", "BCOLOMBIA.CB",
-            "VOO", "CSPX", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-            "META", "NVDA", "V", "MA", "PYPL", "NFLX", "ADBE", "CRM");
+            "ECOPETROL", "ISA", "GEB", "BCOLOMBIA", "GRUPOAVAL", 
+            "NUTRESA", "GRUPOSURA", "CEMARGOS", "CORFICOLCF", "CELSIA",
+            "VOO", "SPY", "QQQ", "IVV", "VTI", "EFA", "IWM", "DIA", "XLK", "XLF");
 
     public FinancialController() {
         this.etlService = new EtlService();
@@ -136,15 +136,43 @@ public class FinancialController {
         List<FinancialRecord> mock = new ArrayList<>();
         double lastPrice = 100.0;
         Random r = new Random();
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 1260; i++) { // Approx 5 years of daily data
             double open = lastPrice;
-            double close = open * (1 + (r.nextDouble() - 0.5) * 0.05);
+            double close = open * (1 + (r.nextDouble() - 0.5) * 0.04);
             double high = Math.max(open, close) * (1 + r.nextDouble() * 0.01);
             double low = Math.min(open, close) * (1 - r.nextDouble() * 0.01);
-            mock.add(new FinancialRecord(LocalDate.now().minusDays(200 - i), open, high, low, close, 1000000, close));
+            mock.add(new FinancialRecord(LocalDate.now().minusDays(1260 - i), open, high, low, close, 1000000, close));
             lastPrice = close;
         }
         return mock;
+    }
+
+    @GetMapping("/benchmark")
+    public Map<String, Long> getBenchmark() {
+        try {
+            List<Double> allPrices = new ArrayList<>();
+            for (List<FinancialRecord> records : portfolioData.values()) {
+                for (FinancialRecord r : records) {
+                    allPrices.add(r.close());
+                }
+            }
+            
+            if (allPrices.isEmpty()) {
+                for (int i = 0; i < 500; i++) allPrices.add(Math.random() * 500);
+            }
+            
+            int limit = Math.min(allPrices.size(), 500);
+            double[] priceArray = new double[limit];
+            for (int i = 0; i < limit; i++) {
+                priceArray[i] = allPrices.get(i);
+            }
+            
+            return algorithmService.benchmarkSorting(priceArray);
+        } catch (Throwable t) {
+            Map<String, Long> error = new LinkedHashMap<>();
+            error.put("Error: " + t.getClass().getSimpleName(), 0L);
+            return error;
+        }
     }
 
     @GetMapping("/report/pdf")

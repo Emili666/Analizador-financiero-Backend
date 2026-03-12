@@ -1,6 +1,6 @@
 com\uniquindio\financial\ReportService.class
-com\uniquindio\financial\AlgorithmService.class
 com\uniquindio\financial\EtlService.class
+com\uniquindio\financial\AlgorithmService.class
 com\uniquindio\financial\FinancialController.class
 com\uniquindio\financial\FinancialRecord.class
 com\uniquindio\financial\FinancialApplication.class
