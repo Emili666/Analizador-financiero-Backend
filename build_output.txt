@@ -1,0 +1,23 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------< com.uniquindio.financial:financial-analysis >-------------
+[INFO] Building financial-analysis 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ financial-analysis ---
+[INFO] Deleting C:\Users\Emili\Documents\Analizador-financiero-Backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ financial-analysis ---
+[INFO] skip non existing resourceDirectory C:\Users\Emili\Documents\Analizador-financiero-Backend\src\main\resources
+[INFO] skip non existing resourceDirectory C:\Users\Emili\Documents\Analizador-financiero-Backend\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ financial-analysis ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 6 source files with javac [debug release 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.852 s
+[INFO] Finished at: 2026-03-21T16:15:49-05:00
+[INFO] ------------------------------------------------------------------------
