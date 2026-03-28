@@ -314,7 +314,7 @@ public class AlgorithmService {
         }
     }
 
-    // 6. TimSort (Simplified)
+    // 6. TimSort
     public void timSort(double[] arr) {
         int n = arr.length;
         int RUN = 32;
@@ -342,6 +342,7 @@ public class AlgorithmService {
         }
     }
 
+    
     private void merge(double[] arr, int l, int m, int r) {
         int len1 = m - l + 1, len2 = r - m;
         double[] left = new double[len1];
@@ -357,7 +358,7 @@ public class AlgorithmService {
         while (j < len2) arr[k++] = right[j++];
     }
 
-    // 7. Tree Sort
+    // 7. Tree Sort+
     private static class Node {
         double key;
         Node left, right;
