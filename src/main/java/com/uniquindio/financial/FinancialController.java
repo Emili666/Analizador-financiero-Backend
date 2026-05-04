@@ -205,17 +205,12 @@ public class FinancialController {
                     allPrices.add(r.close());
                 }
             }
-            
             if (allPrices.isEmpty()) {
                 for (int i = 0; i < 500; i++) allPrices.add(Math.random() * 500);
             }
-            
             int limit = Math.min(allPrices.size(), 500);
             double[] priceArray = new double[limit];
-            for (int i = 0; i < limit; i++) {
-                priceArray[i] = allPrices.get(i);
-            }
-            
+            for (int i = 0; i < limit; i++) priceArray[i] = allPrices.get(i);
             return algorithmService.benchmarkSorting(priceArray);
         } catch (Throwable t) {
             Map<String, Long> error = new LinkedHashMap<>();
@@ -224,6 +219,28 @@ public class FinancialController {
         }
     }
 
+    /**
+     * Benchmark de los 4 algoritmos de similitud sobre series de tiempo reales.
+     * Usa los retornos diarios de dos activos del portafolio.
+     * Cada algoritmo se ejecuta 10 veces y se reporta el promedio en microsegundos.
+     *
+     * @param sym1 Primer activo (default: primer activo del portafolio)
+     * @param sym2 Segundo activo (default: segundo activo del portafolio)
+     */
+    @GetMapping("/benchmark/similarity")
+    public List<Map<String, Object>> getBenchmarkSimilarity(
+            @RequestParam(required = false) String sym1,
+            @RequestParam(required = false) String sym2) {
+
+        List<String> keys = new ArrayList<>(portfolioData.keySet());
+        String s1 = (sym1 != null && portfolioData.containsKey(sym1)) ? sym1 : keys.get(0);
+        String s2 = (sym2 != null && portfolioData.containsKey(sym2)) ? sym2 : keys.get(Math.min(1, keys.size() - 1));
+
+        double[] returns1 = calculateReturns(portfolioData.get(s1));
+        double[] returns2 = calculateReturns(portfolioData.get(s2));
+
+        return algorithmService.benchmarkSimilarity(returns1, returns2);
+    }
     @GetMapping("/report/pdf")
     public ResponseEntity<byte[]> exportPdf() {
         List<Map<String, Object>> assets = getAssets();

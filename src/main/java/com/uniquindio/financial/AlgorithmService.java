@@ -580,4 +580,112 @@ public class AlgorithmService {
         }
         return results;
     }
+
+    /**
+     * Benchmark de los 4 algoritmos de similitud sobre series de tiempo reales.
+     *
+     * Ejecuta cada algoritmo múltiples veces (RUNS) y reporta el promedio
+     * para reducir el ruido de la JVM (JIT compilation, GC).
+     *
+     * Retorna para cada algoritmo:
+     *   - timeUs:        tiempo promedio de ejecución en microsegundos
+     *   - complexity:    complejidad teórica en notación Big-O
+     *   - seriesLength:  longitud n de las series usadas
+     *   - result:        valor calculado (para verificar correctitud)
+     *
+     * @param series1 Primera serie de retornos diarios
+     * @param series2 Segunda serie de retornos diarios
+     */
+    public List<Map<String, Object>> benchmarkSimilarity(double[] series1, double[] series2) {
+        final int RUNS = 10; // Promedio de 10 ejecuciones para estabilidad
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        // --- 1. Distancia Euclidiana ---
+        long euclidTotal = 0;
+        double euclidResult = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            euclidResult = euclideanDistance(series1, series2);
+            euclidTotal += System.nanoTime() - start;
+        }
+        results.add(buildBenchmarkEntry(
+            "Distancia Euclidiana",
+            euclidTotal / RUNS / 1000,
+            "O(n)",
+            "Un recorrido lineal calculando Σ(xᵢ - yᵢ)²",
+            series1.length,
+            euclidResult
+        ));
+
+        // --- 2. Correlación de Pearson ---
+        long pearsonTotal = 0;
+        double pearsonResult = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            pearsonResult = pearsonCorrelation(series1, series2);
+            pearsonTotal += System.nanoTime() - start;
+        }
+        results.add(buildBenchmarkEntry(
+            "Correlación de Pearson",
+            pearsonTotal / RUNS / 1000,
+            "O(n)",
+            "Un recorrido acumulando 5 sumas para la fórmula de correlación",
+            series1.length,
+            pearsonResult
+        ));
+
+        // --- 3. Similitud Coseno ---
+        long cosineTotal = 0;
+        double cosineResult = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            cosineResult = cosineSimilarity(series1, series2);
+            cosineTotal += System.nanoTime() - start;
+        }
+        results.add(buildBenchmarkEntry(
+            "Similitud Coseno",
+            cosineTotal / RUNS / 1000,
+            "O(n)",
+            "Un recorrido calculando producto punto y normas",
+            series1.length,
+            cosineResult
+        ));
+
+        // --- 4. Dynamic Time Warping ---
+        // DTW es O(n²) — se usa subserie para no bloquear el servidor
+        int dtwN = Math.min(series1.length, 300);
+        double[] s1dtw = Arrays.copyOf(series1, dtwN);
+        double[] s2dtw = Arrays.copyOf(series2, dtwN);
+
+        long dtwTotal = 0;
+        double dtwResult = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            dtwResult = computeDTW(s1dtw, s2dtw);
+            dtwTotal += System.nanoTime() - start;
+        }
+        results.add(buildBenchmarkEntry(
+            "Dynamic Time Warping (DTW)",
+            dtwTotal / RUNS / 1000,
+            "O(n × m)",
+            "Tabla de programación dinámica (n+1)×(m+1) — ejecutado con n=" + dtwN,
+            dtwN,
+            dtwResult
+        ));
+
+        return results;
+    }
+
+    private Map<String, Object> buildBenchmarkEntry(
+            String name, long timeUs, String complexity,
+            String description, int n, double result) {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("algorithm",    name);
+        entry.put("timeUs",       timeUs);
+        entry.put("complexity",   complexity);
+        entry.put("description",  description);
+        entry.put("seriesLength", n);
+        entry.put("result",       result);
+        return entry;
+    }
 }
