@@ -113,32 +113,63 @@ public class AlgorithmService {
     }
 
     /**
-     * Requirement: Sliding window pattern detection.
-     * Pattern: Consecutive Up (prices increasing for 'windowSize' days).
-     * Complexity Analysis: O(n * windowSize) where n is the prices length.
+     * Requerimiento 3: Detección de patrones con ventana deslizante (Sliding Window).
+     *
+     * Patrón 1 — Días consecutivos al alza:
+     * Detecta sub-secuencias de 'windowSize' días donde cada precio de cierre
+     * es estrictamente mayor al del día anterior.
+     *
+     * Decisión de diseño — tamaño de ventana:
+     * El parámetro 'windowSize' es configurable para permitir análisis con
+     * diferentes horizontes temporales:
+     *   - windowSize=3: patrón corto, señal de impulso de corto plazo.
+     *   - windowSize=5: semana completa al alza, señal de tendencia semanal.
+     *   - windowSize=10: tendencia de dos semanas, señal más robusta.
+     * Un valor mayor reduce la frecuencia de detección pero aumenta la
+     * significancia estadística del patrón encontrado.
+     *
+     * Complejidad: O(n × windowSize) donde n = longitud de la serie de precios.
+     * En la práctica se comporta como O(n) porque el break temprano evita
+     * recorrer la ventana completa en la mayoría de los casos.
+     *
+     * @param prices     Array de precios de cierre ordenados cronológicamente
+     * @param windowSize Tamaño de la ventana deslizante (mínimo 2)
+     * @return Número de ocurrencias del patrón en la serie completa
      */
     public int countConsecutiveUp(double[] prices, int windowSize) {
+        if (windowSize < 2) windowSize = 2;
         int count = 0;
         for (int i = 0; i <= prices.length - windowSize; i++) {
             boolean isUp = true;
             for (int j = 1; j < windowSize; j++) {
                 if (prices[i + j] <= prices[i + j - 1]) {
                     isUp = false;
-                    break;
+                    break; // Optimización: salir temprano si se rompe la condición
                 }
             }
-            if (isUp)
-                count++;
+            if (isUp) count++;
         }
         return count;
     }
 
     /**
-     * Requirement: Additional pattern detection (Bullish Engulfing).
-     * Rule: Previous day is red (Close < Open), current day is green (Close >
-     * Open),
-     * and current body engulfs previous body.
-     * Complexity Analysis: O(n) where n is the number of records.
+     * Requerimiento 3: Patrón adicional — Envolvente Alcista (Bullish Engulfing).
+     *
+     * Definición formal:
+     * Un patrón Envolvente Alcista ocurre cuando:
+     *   1. La vela del día anterior es bajista: Close(t-1) < Open(t-1)  [vela roja]
+     *   2. La vela del día actual es alcista:   Close(t)   > Open(t)    [vela verde]
+     *   3. El cuerpo actual envuelve al anterior:
+     *      Open(t) <= Close(t-1)  AND  Close(t) >= Open(t-1)
+     *
+     * Significado financiero: señal de reversión alcista. Indica que los compradores
+     * absorbieron completamente la presión vendedora del día anterior, sugiriendo
+     * un posible cambio de tendencia de bajista a alcista.
+     *
+     * Complejidad: O(n) — un único recorrido lineal sobre los registros.
+     *
+     * @param records Lista de registros OHLC ordenados cronológicamente
+     * @return Número de patrones Envolvente Alcista detectados
      */
     public int countBullishEngulfing(List<FinancialRecord> records) {
         int count = 0;
@@ -146,10 +177,11 @@ public class AlgorithmService {
             FinancialRecord prev = records.get(i - 1);
             FinancialRecord curr = records.get(i);
 
-            boolean prevRed = prev.close() < prev.open();
-            boolean currGreen = curr.close() > curr.open();
+            boolean prevRed   = prev.close() < prev.open();  // Condición 1: vela roja previa
+            boolean currGreen = curr.close() > curr.open();  // Condición 2: vela verde actual
 
             if (prevRed && currGreen) {
+                // Condición 3: el cuerpo actual envuelve completamente al anterior
                 if (curr.open() <= prev.close() && curr.close() >= prev.open()) {
                     count++;
                 }
@@ -159,14 +191,21 @@ public class AlgorithmService {
     }
 
     /**
-     * Requirement: Risk Classification.
-     * Complexity Analysis: O(1).
+     * Requerimiento 3: Clasificación de riesgo por volatilidad histórica anualizada.
+     *
+     * Umbrales basados en volatilidad anualizada (desviación estándar × √252):
+     *   - Conservador:  vol < 15%  — activos de baja dispersión (ej: bonos, ETFs defensivos)
+     *   - Moderado:     15% ≤ vol < 30% — acciones de gran capitalización estables
+     *   - Agresivo:     vol ≥ 30%  — acciones de alta volatilidad, mercados emergentes
+     *
+     * Complejidad: O(1).
+     *
+     * @param volatility Volatilidad anualizada (valor entre 0 y 1+)
+     * @return Categoría de riesgo como String
      */
     public String classifyRisk(double volatility) {
-        if (volatility < 0.15)
-            return "CONSERVATIVE";
-        if (volatility < 0.30)
-            return "MODERATE";
+        if (volatility < 0.15) return "CONSERVATIVE";
+        if (volatility < 0.30) return "MODERATE";
         return "AGGRESSIVE";
     }
 

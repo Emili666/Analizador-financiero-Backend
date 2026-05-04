@@ -21,16 +21,27 @@ class EtlServiceTest {
     }
 
     @Test
-    void testParseCsv() {
-        // Tiingo format: date,close,high,low,open,volume,adjClose...
-        String csv = "date,close,high,low,open,volume,adjClose\n" +
-                "2023-01-01,154.0,155.0,149.0,150.0,1000000,154.0\n" +
-                "2023-01-02,157.0,158.0,153.0,154.0,1200000,157.0";
+    void testParseYahooJson() {
+        // JSON mínimo con estructura real de Yahoo Finance v8
+        // timestamps: 1672531200 = 2023-01-01, 1672617600 = 2023-01-02 (UTC)
+        String json = "{\"chart\":{\"result\":[{" +
+                "\"timestamp\":[1672531200,1672617600]," +
+                "\"indicators\":{" +
+                "\"quote\":[{" +
+                "\"open\":[150.0,154.0]," +
+                "\"high\":[155.0,158.0]," +
+                "\"low\":[149.0,153.0]," +
+                "\"close\":[154.0,157.0]," +
+                "\"volume\":[1000000.0,1200000.0]" +
+                "}]," +
+                "\"adjclose\":[{\"adjclose\":[154.0,157.0]}]" +
+                "}}]}}";
 
-        List<FinancialRecord> records = etlService.parseCsv(csv);
+        List<FinancialRecord> records = etlService.parseYahooJson(json);
         assertEquals(2, records.size());
-        assertEquals(LocalDate.parse("2023-01-01"), records.get(0).date());
         assertEquals(150.0, records.get(0).open());
+        assertEquals(154.0, records.get(0).close());
+        assertEquals(157.0, records.get(1).close());
     }
 
     @Test
